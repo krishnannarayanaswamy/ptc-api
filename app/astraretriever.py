@@ -48,6 +48,24 @@ class AstraProductRetriever(BaseRetriever):
         session.execute(query_store_chat,(str(session_id), str(query),str(answer)))
         return True
 
+    def upsert_products(self, products):
+        
+        session = cassio.config.resolve_session()
+        cmd_insert_product = f"""
+                INSERT INTO {keyspace}.{table}
+                (product_id, item_sku, item_name, tags, brand,category, unit_price, short_description, description, product_url, image, text_embedding)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """
+        count = 0
+        for row in products:
+            count += 1
+            rawtext = f"Item SKU: {row['item_sku']} Item Name: {row['item_name']} Tags: {row['tags']} Short Description: {row['short_description']} Description: {row['description']} Brand: {row['brand']} Price: {row['unit_price']} Category: {row['category']}"
+            embedding = llmutil.generate_embedding(rawtext)
+            session.execute(cmd_insert_product, (int(row['product_id']), str(row['item_sku']), str(row['item_name']), str(row['tags']), str(row['brand']), str(row['category']), float(row['unit_price']), str(row['short_description']),str(row['description']), str(row['product_url']), str(row['image']), embedding))
+            print(f""" id: {row['product_id']} record inserted or updated.""")
+
+        return f"""Successfully Inserted or Updated {count} products."""
+
     def get_relevant_documents(self, query):
         docs = []
         embedding = llmutil.generate_embedding(query)

@@ -1,7 +1,7 @@
 #import logging
 #from app import app
 from flask import Flask,render_template, request
-from api_products import search, ask
+from api_products import search, ask, upsert
 import json
 
 app = Flask(__name__)
@@ -47,14 +47,18 @@ def ask_ai_assistant():
 
 @app.route("/update_inventory", methods=["POST"])
 def update_inventory():
-    data = request.get()
-    products = json.loads(data.text)
-    print(f"Data recieved: {products}")
+    #data = request.get()
+    #products = json.loads(request.get_json())
+    products = request.get_json()
+    print(f"Number of products recieved: {len(products)}")
 
-    for product in products:
-        print(product['product_id'])
+    if len(products) > 10:
+        return "API supports only maximum of 10 products for now. Please issue multiple requests of 10 products.", 500
 
-    response = ask(
+    #for product in products:
+    #    print(product['product_id'])
+
+    response = upsert(
         products=products,
     )
 

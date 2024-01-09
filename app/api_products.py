@@ -66,10 +66,10 @@ def ask(
     return aianswer
 
 
-def update(
+def upsert(
     products
 ) -> str:
     
+    retriever = AstraProductRetriever()
 
-
-    return ""
+    return retriever.upsert_products(products)
