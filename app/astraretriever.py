@@ -47,6 +47,16 @@ class AstraProductRetriever(BaseRetriever):
 
         session.execute(query_store_chat,(str(session_id), str(query),str(answer)))
         return True
+    
+    def get_chat_history(self, session_id):
+        
+        session = cassio.config.resolve_session()
+        query_get_chat = f"""
+        SELECT id, userquery, aianswer FROM {keyspace}.{historytable}
+        WHERE sessionid = '{str(session_id)}' LIMIT 3 ALLOW FILTERING"""
+        results = session.execute(query_get_chat)
+        history = results._current_rows
+        return history
 
     def upsert_products(self, products):
         
@@ -66,9 +76,9 @@ class AstraProductRetriever(BaseRetriever):
 
         return f"""Successfully Inserted or Updated {count} products."""
 
-    def get_relevant_documents(self, query):
+    def get_relevant_documents(self, question):
         docs = []
-        embedding = llmutil.generate_embedding(query)
+        embedding = llmutil.generate_embedding(question)
         session = cassio.config.resolve_session()
         query_select_products = f"""
         SELECT product_id, item_sku, item_name, product_url, brand, category, unit_price, description 
@@ -82,7 +92,7 @@ class AstraProductRetriever(BaseRetriever):
         for r in top_products:
             docs.append(Document(
                 id=r.product_id,
-                page_content=r.description,
+                page_content= f"Product name : {r.item_name} Product Description :  {r.description} Product price : {str(r.unit_price)} + Product URL : {r.product_url}",
                 metadata={"product_id id": r.product_id,
                            "item_sku": r.item_sku,
                            "item_name": r.item_name,
@@ -93,5 +103,5 @@ class AstraProductRetriever(BaseRetriever):
                         }
             ))
 
-        print(docs) 
+        #print(docs) 
         return docs

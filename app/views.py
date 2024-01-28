@@ -38,7 +38,7 @@ def ask_ai_assistant():
     session_id = data.get("session_id", "")
 
     response = ask(
-        query=query,
+        question=query,
         session_id=session_id,
     )
 
